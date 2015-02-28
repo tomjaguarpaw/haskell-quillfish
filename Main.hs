@@ -16,14 +16,13 @@ import qualified Data.List.NonEmpty as NEL
 import qualified Control.Monad.Trans.State as St
 
 type Failure = String
+type Q = Either Failure
 
 type ColId = Int
 
 data Rows a = Rows { elements   :: [a]
                    , col        :: ColId -> Q (a -> Dynamic)
                    , indices    :: [([ColId], [Dynamic] -> Q [a])] }
-
-type Q = Either Failure
 
 castErr :: Typeable b => String -> Dynamic -> Q b
 castErr err a = case Dynamic.fromDynamic a of
