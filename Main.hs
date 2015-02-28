@@ -20,6 +20,39 @@ type Q = Either Failure
 
 type ColId = Int
 
+-- `Rows` is quillfish's "base table" or "base relation" type.
+--
+-- A `Rows` contains a list of the row values, a means of extracting
+-- each of the column values, and one or more indexes for looking up
+-- rows based on keys.
+--
+-- The rows have some type `a` and columns can be projected out by
+-- providing a `ColId` reference into the row.  The type of this
+-- projection operation is "too large" in the sense that we can easily
+-- ask for a `ColId` that doesn't actually exist in the row.  However,
+-- a higher level API will ensure that we only ever ask for valid
+-- columns.
+--
+-- Indexes are provided in a list containing pairs matching the
+-- `ColId`s pertaining to the index keys to the functions which take
+-- the key values and yield the row or rows matching that key.  For
+-- example, for `Rows (k, v)` backed by a `Data.Map k v` there will be
+-- two indexes.  The first is the normal boring one which just yields
+-- all rows.  Its index entry is of the form
+--
+--     ([], f)
+--
+-- where `f` expects to receive an empty list as an argument and
+-- returns all the rows.  Again the type of the indices is "too big".
+-- If `f` receives a non-empty argument it will fail.  The second
+-- index does a much more efficient lookup based on the value of `k`.
+-- The index entry is of the form
+--
+--    ([0], g)
+--
+-- where `[0]` indicates that `g` expects to be passed a singleton
+-- list containing the value of `ColId` `0`, i.e. the key `k`.
+--
 data Rows a = Rows { elements   :: [a]
                    , col        :: ColId -> Q (a -> Dynamic)
                    , indices    :: [([ColId], [Dynamic] -> Q [a])] }
