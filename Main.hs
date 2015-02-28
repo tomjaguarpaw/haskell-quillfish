@@ -50,6 +50,32 @@ rowsOfMap m = Rows { elements = Map.toList m
                                ]
                    }
 
+data BaseTableColumn a = BaseTableColumn Tag
+
+data Column a where
+  BaseTableAttrExpr :: BaseTableColumn a -> Column a
+  Eq1 :: BaseTableColumn a -> Column a -> Column Bool
+  Eq2 :: Column a -> BaseTableColumn a -> Column Bool
+  Eq12 :: BaseTableColumn a -> BaseTableColumn a -> Column Bool
+  Fmap :: (a -> b) -> Column a -> Column b
+  Pure :: a -> Column a
+  Ap :: Column (a -> b) -> Column a -> Column b
+
+data PrimQuery = Unit
+               | forall a. BaseTable (Rows a)
+               | Product [NEL.NonEmpty PrimQuery]
+               | Restrict [Column Bool]
+
+type BaseTableId = Int
+
+type Tag = (BaseTableId, ColId)
+
+type Query a = St.State (Tag, PrimQuery) a
+
+
+
+-- Old stuff.  Probably useless
+
 firstMatch :: (a -> Bool) -> [a] -> Maybe (a, [a])
 firstMatch _ []     = Nothing
 firstMatch p (a:as) = if p a
@@ -84,24 +110,3 @@ test = join as (rowsOfMap (Map.fromList (zip as as))) [(toDyn, 0)]
   where as = [1..1000000] :: [Int]
 -}
  
-data BaseTableColumn a = BaseTableColumn Tag
-
-data Column a where
-  BaseTableAttrExpr :: BaseTableColumn a -> Column a
-  Eq1 :: BaseTableColumn a -> Column a -> Column Bool
-  Eq2 :: Column a -> BaseTableColumn a -> Column Bool
-  Eq12 :: BaseTableColumn a -> BaseTableColumn a -> Column Bool
-  Fmap :: (a -> b) -> Column a -> Column b
-  Pure :: a -> Column a
-  Ap :: Column (a -> b) -> Column a -> Column b
-
-data PrimQuery = Unit
-               | forall a. BaseTable (Rows a)
-               | Product [NEL.NonEmpty PrimQuery]
-               | Restrict [Column Bool]
-
-type BaseTableId = Int
-
-type Tag = (BaseTableId, ColId)
-
-type Query a = St.State (Tag, PrimQuery) a
