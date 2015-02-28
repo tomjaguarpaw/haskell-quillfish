@@ -1,6 +1,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
 
 import Data.Dynamic (Dynamic, fromDynamic, toDyn)
 import qualified Data.Dynamic as Dynamic
@@ -20,7 +21,7 @@ type ColId = Int
 
 data Rows a = Rows { elements   :: [a]
                    , col        :: ColId -> Q (a -> Dynamic)
-                   , indices    :: [(ColId, Dynamic)] -> Q [a] }
+                   , indices    :: [([ColId], [Dynamic] -> Q [a])] }
 
 type Q = Either Failure
 
@@ -38,14 +39,15 @@ rowsOfMap m = Rows { elements = Map.toList m
                                     else
                                       Left ("Got " <> show i
                                             <> " as index into a map")
-                   , indices = \irs -> case firstMatch ((== 0) . fst) irs of
-                       Nothing -> scanMap irs (Map.toList m)
-                       Just ((_, r), as) -> do
-                         k <- castErr "index key" r
-                         (scanMap as
-                          . fmap (\v -> (k, v))
-                          . Data.Foldable.toList
-                          . Map.lookup k) m
+                   , indices = [ ([], \case [] -> return (Map.toList m)
+                                            _  -> Left "Was expecting an empty argument")
+                               , ([0], \case [kDyn] -> do
+                                               k <- castErr "Map index key" kDyn
+                                               (return
+                                                . fmap (\v -> (k, v))
+                                                . Data.Foldable.toList
+                                                . Map.lookup k) m)
+                               ]
                    }
 
 firstMatch :: (a -> Bool) -> [a] -> Maybe (a, [a])
@@ -71,7 +73,7 @@ scan (i, r) = if i == 0 then do
                     return (filter ((== r') . snd))
               else Left "Got a wrong key index"
 
-
+{-
 join :: [a] -> Rows b -> [(a -> Dynamic, ColId)] -> Q [(a, b)]
 join as rs fs = (fmap concat
                  . sequence
@@ -80,6 +82,7 @@ join as rs fs = (fmap concat
 
 test = join as (rowsOfMap (Map.fromList (zip as as))) [(toDyn, 0)]
   where as = [1..1000000] :: [Int]
+-}
  
 data BaseTableColumn a = BaseTableColumn Tag
 
