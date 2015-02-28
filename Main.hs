@@ -31,10 +31,13 @@ castErr err a = case Dynamic.fromDynamic a of
 
 rowsOfMap :: (Ord k, Typeable k, Typeable v, Eq v) => Map k v -> Rows (k, v)
 rowsOfMap m = Rows { elements = Map.toList m
-                   , col    = \i -> if i == 0 then return (toDyn . fst)
-                                    else if i == 1 then return (toDyn . snd)
-                                         else Left ("Got " <> show i
-                                                    <> " as index into a map")
+                   , col    = \i -> if i == 0 then
+                                      return (toDyn . fst)
+                                    else if i == 1 then
+                                      return (toDyn . snd)
+                                    else
+                                      Left ("Got " <> show i
+                                            <> " as index into a map")
                    , indices = \irs -> case firstMatch ((== 0) . fst) irs of
                        Nothing -> scanMap irs (Map.toList m)
                        Just ((_, r), as) -> do
@@ -60,14 +63,12 @@ concatEndo = foldr (.) id
 
 scan :: (Eq k, Eq v, Typeable k, Typeable v) =>
         (ColId, Dynamic) -> Q ([(k, v)] -> [(k, v)])
-scan (i, r) = if i == 0
-              then do
+scan (i, r) = if i == 0 then do
                     r' <- castErr "scan key 1" r
                     return (filter ((== r') . fst))
-              else if i == 1
-                   then do
-                     r' <- castErr "scan key 2" r
-                     return (filter ((== r') . snd))
+              else if i == 1 then do
+                    r' <- castErr "scan key 2" r
+                    return (filter ((== r') . snd))
               else Left "Got a wrong key index"
 
 
