@@ -93,6 +93,8 @@ data Column a where
   Pure :: a -> Column a
   Ap :: Column (a -> b) -> Column a -> Column b
 
+-- The challenge is to write an optimized evaluator for `PrimQuery`
+-- that allows indexes to be used wherever possible.
 data PrimQuery = Unit
                | forall a. BaseTable (Rows a)
                | Product [NEL.NonEmpty PrimQuery]
