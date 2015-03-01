@@ -3,6 +3,8 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
 
+module Database.Quillfish where
+
 import Data.Dynamic (Dynamic, fromDynamic, toDyn)
 import qualified Data.Dynamic as Dynamic
 import Data.Typeable (Typeable)
